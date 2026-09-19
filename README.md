@@ -1,42 +1,51 @@
 # Game for Digital Bridge — Допрос / Кошмар инспектора
 
-Геймификация теста «Нужно ли вам сдавать декларацию?»  
-Прод-логика: [sber-invest.kz/services/taxreturn/test](https://sber-invest.kz/services/taxreturn/test)
+Phaser 3 + TypeScript + Vite PWA  
+Стенд Digital Bridge · планшет / kiosk
 
-## Актуальный концепт
+Прод-логика теста: [sber-invest.kz/services/taxreturn/test](https://sber-invest.kz/services/taxreturn/test)
 
-**«Допрос / Кошмар инспектора»** — персонаж Айжан Н., лампа, допрос → кошмарный вердикт → пробуждение с QR.
-
-Дерево вопросов и **8 юридических исходов не менять**. Меняется только оболочка.
-
-## Запуск прототипа
+## Запуск
 
 ```bash
-cd game_for_digital_bridge
-python3 -m http.server 8080
+npm install
+npm run kiosk    # http://0.0.0.0:8080 — для планшета в сети
+# или
+npm run dev
 ```
 
-Открыть: [http://localhost:8080](http://localhost:8080)
+Сборка:
 
-## Цикл
+```bash
+npm run build
+npm run preview
+```
 
-Старт → комната допроса → вопросы как допрос → вердикт в кошмаре → будильник → пробуждение + **QR «Подай декларацию — и спи спокойно»** (WATCH/ALERT).
+## Что это
+
+Не лендинг — **игровая оболочка** поверх decision tree:
+
+- сцены Phaser: Title → Interrogation → Verdict → WakeCut → Wake / Abort
+- лампа с heat (cold→boil), кино-кадр с Айжан и роботом, shake, stamp particles, idle-abort
+- touch-кнопки большого размера под планшет
+- вертикальный планшет 720×1280 (9:16), мультяшный кино-кадр; fullscreen только с `?kiosk=1`
+- PWA offline fallback (vite-plugin-pwa)
+- аналитика в `localStorage` + опциональный `?api=` / `window.__ANALYTICS_URL`
+- консоль стенда: `window.__stats()`
+
+## Структура
+
+| Путь | Роль |
+|------|------|
+| `src/logic/tree.ts` | 8 исходов, реплики, LINKS |
+| `src/logic/flow.ts` | стейт-машина допроса |
+| `src/scenes/*` | игровые сцены |
+| `src/objects/*` | кино-кадр, лампа, бумага, кнопки |
+| `src/analytics/*` | метрики |
+| `docs/` | спека #4 + библия персонажа |
+| `archive/dom-prototype/` | старый DOM-прототип |
 
 ## Документы
 
-| Файл | Зачем |
-|------|--------|
-| [docs/04-interrogation-nightmare-spec.md](docs/04-interrogation-nightmare-spec.md) | Спека стенда |
-| [docs/05-character-bible-inspector.md](docs/05-character-bible-inspector.md) | Библия персонажа + реплики |
-| [docs/01-current-test-analysis.md](docs/01-current-test-analysis.md) | Дерево (не ломать) |
-
-## Код
-
-| Файл | Роль |
-|------|------|
-| `index.html` | Entry |
-| `css/styles.css` | Комната / лампа / утро |
-| `js/tree.js` | Дерево + реплики + LINKS |
-| `js/app.js` | Стейт-машина E0–E5 |
-
-URL QR/CTA: `LINKS` в `js/tree.js`.
+- [docs/04-interrogation-nightmare-spec.md](docs/04-interrogation-nightmare-spec.md)
+- [docs/05-character-bible-inspector.md](docs/05-character-bible-inspector.md)

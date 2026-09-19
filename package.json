@@ -1,0 +1,22 @@
+{
+  "name": "game-for-digital-bridge",
+  "private": true,
+  "version": "0.2.0",
+  "type": "module",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "kiosk": "node scripts/dev.mjs",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview"
+  },
+  "dependencies": {
+    "@fontsource/manrope": "^5.3.0",
+    "@fontsource/unbounded": "^5.3.0",
+    "phaser": "^3.87.0"
+  },
+  "devDependencies": {
+    "typescript": "^5.8.2",
+    "vite": "^6.2.2",
+    "vite-plugin-pwa": "^0.21.1"
+  }
+}
