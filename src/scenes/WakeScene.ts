@@ -10,7 +10,8 @@ import { FONT_BODY, FONT_DISPLAY, T } from "../game/theme";
 const CTA_TELEGRAM =
   "Но обязательно подпишитесь на наш Телеграм-канал, чтобы быть в курсе.";
 const CTA_AIZHAN =
-  "Свяжитесь с AI-Zhan — нашим ИИ-агентом, она расскажет, что делать дальше.\nСбер-инвест вам обязательно поможет.";
+  "Свяжитесь с AI-Zhan — нашим ИИ-агентом, она расскажет, что делать дальше.";
+const CTA_SBER = "Сбер-инвест вам обязательно поможет.";
 
 function qrUrl(data: string): string {
   return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(data)}`;
@@ -91,12 +92,33 @@ export class WakeScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setDepth(12);
 
-    this.placeQr(W / 2, ctaT.y + ctaT.height + 168, qrKey, qrData);
+    let qrAnchorY = ctaT.y + ctaT.height + 128;
+    if (mustFile) {
+      const sberT = this.add
+        .text(W / 2, ctaT.y + ctaT.height + 16, CTA_SBER, {
+          fontFamily: FONT_DISPLAY,
+          fontSize: "26px",
+          color: T.speech,
+          align: "center",
+          wordWrap: { width: W - 160 },
+          lineSpacing: 4,
+        })
+        .setOrigin(0.5, 0)
+        .setDepth(12);
+      sberT.setStroke("#1a1208", 5);
+      sberT.setShadow(0, 2, "#00000055", 4, true, true);
+      qrAnchorY = sberT.y + sberT.height + 118;
+    }
+
+    const btnY = top + paperH - 68;
+    const qrSize = 256;
+    const qrMaxY = btnY - 44 - qrSize / 2 - 20;
+    this.placeQr(W / 2, Math.min(qrAnchorY, qrMaxY) + 12, qrKey, qrData, qrSize);
 
     new FolderButton(
       this,
       W / 2,
-      top + paperH - 68,
+      btnY,
       "Вернуться",
       W - 160,
       () => this.restartGame(),
@@ -108,14 +130,15 @@ export class WakeScene extends Phaser.Scene {
     x: number,
     y: number,
     key: string,
-    data: string
+    data: string,
+    size = 256
   ): void {
     const show = (): void => {
       if (!this.textures.exists(key)) return;
       this.add
         .image(x, y, key)
         .setOrigin(0.5)
-        .setDisplaySize(296, 296)
+        .setDisplaySize(size, size)
         .setDepth(12);
     };
     if (this.textures.exists(key)) {
