@@ -7,8 +7,14 @@ import { addStage, PaperSheet } from "../objects/Cinematic";
 import { W, H } from "../game/config";
 import { FONT_BODY, FONT_DISPLAY, T } from "../game/theme";
 
-/** Placeholder now. Later swap to the real booth file: "art/wake-qr.png". */
-const QR_SRC = `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(LINKS.soft_qr)}`;
+const CTA_TELEGRAM =
+  "Но обязательно подпишитесь на наш Телеграм-канал, чтобы быть в курсе.";
+const CTA_AIZHAN =
+  "Свяжитесь с AI-Zhan — нашим ИИ-агентом, она расскажет, что делать дальше.\nСбер-инвест вам обязательно поможет.";
+
+function qrUrl(data: string): string {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(data)}`;
+}
 
 export class WakeScene extends Phaser.Scene {
   constructor() {
@@ -23,11 +29,20 @@ export class WakeScene extends Phaser.Scene {
     }
     const verdict = VERDICTS[code];
     const mustFile = verdict.finale === "WATCH" || verdict.finale === "ALERT";
+    const cta = mustFile ? CTA_AIZHAN : CTA_TELEGRAM;
+    const qrData = mustFile ? LINKS.ai : LINKS.telegram;
+    const qrKey = mustFile ? "wake_qr_ai" : "wake_qr_tg";
 
-    addStage(this, "bg_wake", false);
+    const { still } = addStage(this, "bg_wake", false);
+    // Slight raise so faces clear the QR, but keep head in frame and fill the bottom
+    if (still) {
+      const cover = Math.max(W / still.width, H / still.height);
+      still.setScale(cover * 1.2);
+      still.y = H * 0.48;
+    }
 
-    const paperH = 680;
-    const paperY = H - 48 - paperH / 2;
+    const paperH = 700;
+    const paperY = H - 40 - paperH / 2;
     new PaperSheet(this, paperY, paperH);
     const top = paperY - paperH / 2;
 
@@ -41,7 +56,7 @@ export class WakeScene extends Phaser.Scene {
       : verdict.legal;
 
     this.add
-      .text(W / 2, top + 56, title, {
+      .text(W / 2, top + 40, title, {
         fontFamily: FONT_DISPLAY,
         fontSize: "32px",
         color: T.ink,
@@ -52,8 +67,8 @@ export class WakeScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setDepth(12);
 
-    this.add
-      .text(W / 2, top + 158, body, {
+    const bodyT = this.add
+      .text(W / 2, top + 136, body, {
         fontFamily: FONT_BODY,
         fontSize: "14px",
         color: T.ink,
@@ -64,12 +79,24 @@ export class WakeScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setDepth(12);
 
-    this.placeQr(W / 2, top + 360);
+    const ctaT = this.add
+      .text(W / 2, bodyT.y + bodyT.height + 14, cta, {
+        fontFamily: FONT_BODY,
+        fontSize: "15px",
+        color: T.ink,
+        align: "center",
+        wordWrap: { width: W - 180 },
+        lineSpacing: 4,
+      })
+      .setOrigin(0.5, 0)
+      .setDepth(12);
+
+    this.placeQr(W / 2, ctaT.y + ctaT.height + 168, qrKey, qrData);
 
     new FolderButton(
       this,
       W / 2,
-      top + paperH - 72,
+      top + paperH - 68,
       "Вернуться",
       W - 160,
       () => this.restartGame(),
@@ -77,16 +104,25 @@ export class WakeScene extends Phaser.Scene {
     );
   }
 
-  private placeQr(x: number, y: number): void {
+  private placeQr(
+    x: number,
+    y: number,
+    key: string,
+    data: string
+  ): void {
     const show = (): void => {
-      if (!this.textures.exists("wake_qr")) return;
-      this.add.image(x, y, "wake_qr").setDisplaySize(296, 296).setDepth(12);
+      if (!this.textures.exists(key)) return;
+      this.add
+        .image(x, y, key)
+        .setOrigin(0.5)
+        .setDisplaySize(296, 296)
+        .setDepth(12);
     };
-    if (this.textures.exists("wake_qr")) {
+    if (this.textures.exists(key)) {
       show();
       return;
     }
-    this.load.image("wake_qr", QR_SRC);
+    this.load.image(key, qrUrl(data));
     this.load.once(Phaser.Loader.Events.COMPLETE, show);
     this.load.start();
   }

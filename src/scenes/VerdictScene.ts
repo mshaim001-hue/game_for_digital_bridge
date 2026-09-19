@@ -1,10 +1,9 @@
 import Phaser from "phaser";
 import { flow } from "../logic/flow";
 import { FINALE_SHELL, VERDICTS } from "../logic/tree";
-import { FolderButton, SpeechBubble } from "../objects/Talk";
+import { FolderButton, SpeechBubble, aimMouth } from "../objects/Talk";
 import { addStage, bottomScrim, officeStillKey } from "../objects/Cinematic";
 import { W, H } from "../game/config";
-import { FONT_BODY, FONT_DISPLAY, T } from "../game/theme";
 
 export class VerdictScene extends Phaser.Scene {
   constructor() {
@@ -21,8 +20,12 @@ export class VerdictScene extends Phaser.Scene {
     const shell = FINALE_SHELL[verdict.finale];
     flow.bumpHeat(shell.heat);
 
-    const { lamp } = addStage(this, officeStillKey(flow.heat), false);
-    lamp.setHeat(flow.heat);
+    const calm = verdict.finale === "CLEAR" || verdict.finale === "OUT";
+    const stillKey = calm ? "bg_office_clear" : officeStillKey(flow.heat);
+    aimMouth(!calm);
+    const { lamp } = addStage(this, stillKey, false);
+    lamp.setHeat(calm ? "cold" : flow.heat);
+    if (calm) this.cameras.main.setZoom(1);
 
     if (verdict.finale === "OUT") {
       this.time.delayedCall(400, () => lamp.extinguish());
@@ -33,44 +36,28 @@ export class VerdictScene extends Phaser.Scene {
 
     new SpeechBubble(this, `«${shell.speech.join(" ")}»`, 360);
 
-    bottomScrim(this, H - 280, 0.78);
+    bottomScrim(this, H - 220, 0.78);
 
-    if (verdict.finale === "ALERT" || verdict.finale === "WATCH") {
-      ["Штраф", "Пеня", "Счета"].forEach((tag, i) => {
-        this.add
-          .text(W / 2 - 170 + i * 170, H - 236, tag, {
-            fontFamily: FONT_DISPLAY,
-            fontSize: "16px",
-            color: "#fff5f0",
-            backgroundColor: "#ff5a3d",
-            padding: { x: 12, y: 8 },
-          })
-          .setOrigin(0.5)
-          .setDepth(12);
-      });
-    }
-
-    this.add
-      .text(W / 2, H - 156, verdict.legal, {
-        fontFamily: FONT_BODY,
-        fontSize: "14px",
-        color: T.dim,
-        align: "center",
-        wordWrap: { width: W - 80 },
-      })
-      .setOrigin(0.5, 0)
-      .setDepth(12);
-
-    new FolderButton(
+    const continueBtn = new FolderButton(
       this,
       W / 2,
-      H - 64,
-      "… коснись, чтобы проснуться",
+      H - 160,
+      "Продолжить",
       W - 80,
       () => {
-        flow.beginWakeCut();
-        this.scene.start("WakeCut");
-      }
+        flow.beginWake();
+        this.scene.start("Wake");
+      },
+      { height: 88, size: "34px", tone: "yes" }
     );
+
+    this.tweens.add({
+      targets: continueBtn,
+      alpha: 0.42,
+      duration: 3200,
+      yoyo: true,
+      repeat: -1,
+      ease: "Sine.inOut",
+    });
   }
 }

@@ -4,7 +4,7 @@ import { INTRO_SPEECH } from "../logic/tree";
 import { track, trackVerdict } from "../analytics/analytics";
 import { Lamp } from "../objects/Lamp";
 import { FolderButton, SpeechBubble, aimMouth } from "../objects/Talk";
-import { addStage, bottomScrim, coverImage, officeStillKey } from "../objects/Cinematic";
+import { addStage, bottomScrim, coverImage, interrogationStillKey } from "../objects/Cinematic";
 import { W, H } from "../game/config";
 import { FONT_BODY, FONT_DISPLAY, T } from "../game/theme";
 
@@ -14,11 +14,14 @@ export class InterrogationScene extends Phaser.Scene {
   private lamp!: Lamp;
   private still: Phaser.GameObjects.Image | null = null;
   private pressed = false;
+  private checking = false;
+  private suspecting = false;
   private smiled = false;
   private pendingSmile = false;
+  private pendingCheck = false;
+  private pendingSuspect = false;
   private uiRoot!: Phaser.GameObjects.Container;
   private reactionText!: Phaser.GameObjects.Text;
-  private stamps: Phaser.GameObjects.Text[] = [];
   private locked = false;
   private idleTimer?: Phaser.Time.TimerEvent;
   private selected = new Set<string>();
@@ -34,13 +37,21 @@ export class InterrogationScene extends Phaser.Scene {
     this.selected = new Set(flow.selected);
 
     this.smiled = flow.heat === "hot" || flow.heat === "boil";
-    this.pressed = flow.heat !== "cold";
-    aimMouth(this.pressed);
-    const stage = addStage(this, officeStillKey(flow.heat), false);
+    this.pressed = flow.heat === "warm" || this.smiled;
+    this.suspecting = !this.pressed && flow.step === "q1_3";
+    this.checking = !this.pressed && !this.suspecting && flow.step === "q1_2";
+    aimMouth(this.pressed || this.smiled || this.suspecting);
+    const stage = addStage(
+      this,
+      interrogationStillKey(flow.heat, flow.step),
+      false
+    );
     this.lamp = stage.lamp;
     this.still = stage.still;
     this.lamp.setHeat(flow.heat);
-    if (this.pressed) this.cameras.main.setZoom(1.04);
+    if (this.pressed || this.smiled) this.cameras.main.setZoom(1.04);
+    else if (this.suspecting) this.cameras.main.setZoom(1.03);
+    else if (this.checking) this.cameras.main.setZoom(1.02);
 
     this.add
       .text(W - 28, 36, "✕  Прервать", {
@@ -110,7 +121,6 @@ export class InterrogationScene extends Phaser.Scene {
 
   private clearUi(): void {
     this.uiRoot.removeAll(true);
-    this.stamps = [];
   }
 
   private renderStep(): void {
@@ -129,25 +139,8 @@ export class InterrogationScene extends Phaser.Scene {
 
     const speech = flow.showIntro ? `«${INTRO_SPEECH}»\n\n${q.title}` : q.title;
     flow.showIntro = false;
-    const bubble = new SpeechBubble(this, speech, 400);
+    const bubble = new SpeechBubble(this, speech, 360);
     this.uiRoot.add(bubble);
-
-    const labels = ["Резидент", "Обязательные", "Активы"];
-    this.stamps = labels.map((label, i) => {
-      const t = this.add
-        .text(24 + i * 132, 36, label, {
-          fontFamily: FONT_BODY,
-          fontSize: "13px",
-          color: T.dim,
-          backgroundColor: "#00000066",
-          padding: { x: 8, y: 5 },
-        })
-        .setOrigin(0, 0.5)
-        .setDepth(12);
-      this.uiRoot.add(t);
-      return t;
-    });
-    this.refreshStamps();
 
     const chipRow = 74;
     const chipRows = q.kind === "chips" ? Math.ceil(q.items.length / 2) : 0;
@@ -281,10 +274,6 @@ export class InterrogationScene extends Phaser.Scene {
     this.tip = undefined;
   }
 
-  private refreshStamps(): void {
-    this.stamps.forEach((s) => s.setColor(T.dim));
-  }
-
   private onYesNo(id: StepId, yes: boolean): void {
     if (this.locked) return;
     this.handleEvent(flow.answerYesNo(id, yes));
@@ -299,6 +288,9 @@ export class InterrogationScene extends Phaser.Scene {
   private handleEvent(event: FlowEvent): void {
     this.locked = true;
     this.bumpIdle();
+    if (event.still === "check") this.pendingCheck = true;
+    if (event.still === "suspect") this.pendingSuspect = true;
+    if (event.still === "smile") this.pendingSmile = true;
 
     const after = () => {
       flow.apply(event);
@@ -314,17 +306,33 @@ export class InterrogationScene extends Phaser.Scene {
 
     if (event.reaction) {
       this.playReaction(event.reaction, event.heat, after);
-    } else {
+    } else if (
+      event.heat ||
+      this.pendingSmile ||
+      this.pendingCheck ||
+      this.pendingSuspect
+    ) {
       if (event.heat) {
         flow.bumpHeat(event.heat);
         this.lamp.setHeat(flow.heat);
       }
+      this.lamp.flash();
+      this.cameras.main.shake(140, 0.003);
+      this.clearUi();
       if (this.pendingSmile) {
         this.pendingSmile = false;
         this.cutStill("bg_office_smile", 1.06);
-        this.time.delayedCall(560, after);
-        return;
+      } else if (this.pendingSuspect) {
+        this.pendingSuspect = false;
+        this.cutStill("bg_office_suspect", 1.03);
+      } else if (this.pendingCheck) {
+        this.pendingCheck = false;
+        this.cutStill("bg_office_check", 1.02);
+      } else if (flow.heat !== "cold") {
+        this.cutStill("bg_office_press", 1.04);
       }
+      this.time.delayedCall(700, after);
+    } else {
       after();
     }
   }
@@ -345,6 +353,12 @@ export class InterrogationScene extends Phaser.Scene {
     if (this.pendingSmile) {
       this.pendingSmile = false;
       this.cutStill("bg_office_smile", 1.06);
+    } else if (this.pendingSuspect) {
+      this.pendingSuspect = false;
+      this.cutStill("bg_office_suspect", 1.03);
+    } else if (this.pendingCheck) {
+      this.pendingCheck = false;
+      this.cutStill("bg_office_check", 1.02);
     } else if (flow.heat !== "cold") {
       this.cutStill("bg_office_press", 1.04);
     }
@@ -366,12 +380,42 @@ export class InterrogationScene extends Phaser.Scene {
       if (this.smiled || !this.textures.exists(key)) return;
       this.smiled = true;
       this.pressed = true;
-    } else if (this.pressed || this.smiled || !this.textures.exists(key)) {
-      return;
-    } else {
+      this.checking = false;
+      this.suspecting = false;
+      aimMouth(true);
+    } else if (key === "bg_office_press") {
+      if (this.pressed || this.smiled || !this.textures.exists(key)) return;
       this.pressed = true;
+      this.checking = false;
+      this.suspecting = false;
+      aimMouth(true);
+    } else if (key === "bg_office_suspect") {
+      if (
+        this.suspecting ||
+        this.pressed ||
+        this.smiled ||
+        !this.textures.exists(key)
+      ) {
+        return;
+      }
+      this.suspecting = true;
+      this.checking = false;
+      aimMouth(true);
+    } else if (key === "bg_office_check") {
+      if (
+        this.checking ||
+        this.suspecting ||
+        this.pressed ||
+        this.smiled ||
+        !this.textures.exists(key)
+      ) {
+        return;
+      }
+      this.checking = true;
+      aimMouth(false);
+    } else {
+      return;
     }
-    aimMouth(true);
     const next = coverImage(this, key, false);
     if (!next) return;
     next.setAlpha(0).setDepth(-19);

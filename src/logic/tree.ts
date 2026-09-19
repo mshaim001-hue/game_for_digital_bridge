@@ -30,6 +30,19 @@ export const MANDATORY_CATEGORIES: ChipItem[] = [
   { id: "mediator", label: "Профессиональный медиатор" },
 ];
 
+export const SPOUSE_MANDATORY_CATEGORIES: ChipItem[] = [
+  { id: "sp_gov", label: "Государственный служащий" },
+  { id: "sp_ceo", label: "Руководитель юридического лица" },
+  {
+    id: "sp_founder",
+    label: "Учредитель юридического лица с долей более 10%",
+  },
+  {
+    id: "sp_shareholder",
+    label: "Акционер, владеющий более 10% акций",
+  },
+];
+
 export const ASSET_ITEMS: ChipItem[] = [
   {
     id: "income",
@@ -178,9 +191,9 @@ export type FinaleShell = {
 export const FINALE_SHELL: Record<Finale, FinaleShell> = {
   ALERT: {
     speech: [
-      "По фактам — вы обязаны были отчитаться.",
-      "Не подали. Дальше по сценарию: штраф, пеня…",
-      "…и блокировка счетов. Спокойной ночи.",
+      "Ага, вы обязаны отчитаться! Где ваша декларация? Вы её подали?",
+      "Не знали? Незнание закона не освобождает от ответственности.",
+      "Если игнорировать обязанность, вас могут ждать штраф, пеня и заблокированные счета.",
     ],
     wakeTitle: "Подай декларацию — и спи спокойно",
     wakeSub: "Это был предупреждающий сон. Действие — в QR.",
@@ -193,8 +206,8 @@ export const FINALE_SHELL: Record<Finale, FinaleShell> = {
   WATCH: {
     speech: [
       "Сигнал есть: ежегодная декларация.",
-      "Проспите срок — тот же сон, только дороже: штраф, пеня, счета.",
-      "Я бы на вашем месте не ждала второго раза.",
+      "Проспите срок — штраф, пеня и заблокированные счета.",
+      "Я бы на вашем месте подготовилась бы заранее.",
     ],
     wakeTitle: "Подай декларацию — и спи спокойно",
     wakeSub: "ФНО 270 на радаре. Не доводите до кошмара наяву.",
@@ -234,17 +247,17 @@ export const FINALE_SHELL: Record<Finale, FinaleShell> = {
 };
 
 export const INTRO_SPEECH =
-  "Садитесь. Свет не мешает?\nХорошо. Давайте разберёмся.\nДля начала один простой вопрос.";
+  "Свет не слишком яркий?\nХорошо. Давайте разберёмся.\nДля начала один простой вопрос.";
 
 export const LINKS = {
   soft_qr: "https://sber-invest.kz/services/taxreturn",
   hard_cta: "https://sber-invest.kz/services/taxreturn",
   ai: "https://sber-invest.kz/",
+  telegram: "https://t.me/sberinvest",
   products: "https://sber-invest.kz/",
 } as const;
 
 export const MICRO = {
-  resident_yes: "Принято. Вы в зоне внимания.",
   resident_check: "Хм. Тогда уточним статус до конца.",
   mandatory: "Так. Это меняет дело.",
   foreign: "Сигнал есть.",

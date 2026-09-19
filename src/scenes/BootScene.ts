@@ -22,9 +22,12 @@ export class BootScene extends Phaser.Scene {
 
     this.load.image("bg_office", "art/office-portrait.png");
     this.load.image("bg_office_press", "art/office-press.png");
+    this.load.image("bg_office_check", "art/office-check.png");
+    this.load.image("bg_office_suspect", "art/office-suspect.png");
     this.load.image("bg_office_smile", "art/office-smile.png");
+    this.load.image("bg_office_clear", "art/office-clear.png");
     this.load.image("bg_title", "art/title-portrait.png");
-    this.load.image("bg_wake", "art/wake-portrait.png");
+    this.load.image("bg_wake", "art/finale-sunny.png");
   }
 
   create(): void {

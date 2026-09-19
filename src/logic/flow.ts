@@ -3,6 +3,7 @@ import {
   MANDATORY_CATEGORIES,
   MICRO,
   SPOUSE_FOREIGN_ASSETS,
+  SPOUSE_MANDATORY_CATEGORIES,
   VERDICTS,
   maxHeat,
   type ChipItem,
@@ -53,12 +54,19 @@ export type ChipsQuestion = {
 export type Question = YesNoQuestion | ChipsQuestion;
 
 export type FlowEvent =
-  | { type: "goto"; step: StepId; reaction?: string; heat?: Heat }
+  | {
+      type: "goto";
+      step: StepId;
+      reaction?: string;
+      heat?: Heat;
+      still?: "check" | "suspect" | "press" | "smile";
+    }
   | {
       type: "resolve";
       code: VerdictCode;
       reaction?: string;
       heat?: Heat;
+      still?: "check" | "suspect" | "press" | "smile";
     };
 
 export type SessionAnswers = Record<string, unknown>;
@@ -141,7 +149,7 @@ export class InterrogationFlow {
           kind: "yesno",
           id: "q1_2",
           wave: 1,
-          title: "Пребывали ли вы в РК более 183 дней?",
+          title: "Проживали ли вы более 183 дней в Казахстане в отчётном периоде?",
           hint: "Срок пребывания.",
         };
       case "q1_3":
@@ -149,7 +157,8 @@ export class InterrogationFlow {
           kind: "yesno",
           id: "q1_3",
           wave: 1,
-          title: "Центр жизненных интересов — в Республике Казахстан?",
+          title:
+            "Находится ли ваш центр жизненных интересов в Казахстане?\nНапример: проживают ли здесь близкие родственники (родители, дети, братья и сестры) или есть недвижимость в Казахстане.",
           hint: "Семья, имущество, деятельность.",
         };
       case "q2_1":
@@ -163,10 +172,11 @@ export class InterrogationFlow {
         };
       case "q2_2":
         return {
-          kind: "yesno",
+          kind: "chips",
           id: "q2_2",
           wave: 2,
           title: "Супруг(а) относится к обязательным категориям?",
+          items: SPOUSE_MANDATORY_CATEGORIES,
         };
       case "q2_2_f250":
         return {
@@ -213,11 +223,10 @@ export class InterrogationFlow {
         return {
           type: "goto",
           step: "q2_1",
-          reaction: MICRO.resident_yes,
           heat: "warm",
         };
       }
-      return { type: "goto", step: "q1_2", reaction: MICRO.resident_check };
+      return { type: "goto", step: "q1_2", still: "check" };
     }
     if (qid === "q1_2") {
       if (yes) {
@@ -225,11 +234,10 @@ export class InterrogationFlow {
         return {
           type: "goto",
           step: "q2_1",
-          reaction: MICRO.resident_yes,
           heat: "warm",
         };
       }
-      return { type: "goto", step: "q1_3" };
+      return { type: "goto", step: "q1_3", still: "suspect" };
     }
     if (qid === "q1_3") {
       if (yes) {
@@ -237,7 +245,6 @@ export class InterrogationFlow {
         return {
           type: "goto",
           step: "q2_1",
-          reaction: MICRO.resident_yes,
           heat: "warm",
         };
       }
@@ -287,6 +294,19 @@ export class InterrogationFlow {
         };
       }
       return { type: "goto", step: "q2_2" };
+    }
+    if (stepId === "q2_2") {
+      this.answers.q2_2 = ids;
+      if (ids.length > 0) {
+        return {
+          type: "goto",
+          step: "q2_2_f250",
+          reaction: MICRO.spouse,
+          heat: "hot",
+        };
+      }
+      this.wave = 3;
+      return { type: "goto", step: "q2_3" };
     }
     if (stepId === "q2_2_assets") {
       this.answers.q2_2_assets = ids;

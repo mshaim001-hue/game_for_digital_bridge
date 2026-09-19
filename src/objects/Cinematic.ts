@@ -11,6 +11,17 @@ export function officeStillKey(heat: Heat): string {
   return "bg_office";
 }
 
+export function interrogationStillKey(
+  heat: Heat,
+  step: string
+): string {
+  if (heat === "hot" || heat === "boil") return "bg_office_smile";
+  if (heat === "warm") return "bg_office_press";
+  if (step === "q1_3") return "bg_office_suspect";
+  if (step === "q1_2") return "bg_office_check";
+  return "bg_office";
+}
+
 export function coverImage(
   scene: Phaser.Scene,
   key: string,
@@ -116,7 +127,7 @@ export class PaperSheet extends Phaser.GameObjects.Container {
     g.fillRoundedRect(-this.paperW / 2, -height / 2, this.paperW, height, r);
     g.lineStyle(2, 0xd8c49a, 1);
     g.strokeRoundedRect(-this.paperW / 2, -height / 2, this.paperW, height, r);
-    g.setAlpha(0.8);
+    g.setAlpha(0.7);
     this.add(g);
     this.setDepth(10);
     scene.add.existing(this);

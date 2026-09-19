@@ -1,4 +1,5 @@
 import Phaser from "phaser";
+import { W } from "../game/config";
 import { C, FONT_BODY, FONT_DISPLAY, T } from "../game/theme";
 
 /** Mouth of Aizhan on the 720×1280 office still (no Ken Burns). */
@@ -10,10 +11,10 @@ export function aimMouth(press: boolean): void {
   AIZHAN_MOUTH = press ? { ...AIZHAN_MOUTH_PRESS } : { ...AIZHAN_MOUTH_CALM };
 }
 
-/** Bubble position after manual nudges — keep still, only the tail aims at the mouth. */
-const BUBBLE_ANCHOR = { x: 354, y: 130 };
+/** Pin bubble bottom; grow upward. Flush to the right so face stays open. */
+const BUBBLE_BOTTOM = 340;
+const BUBBLE_MARGIN = 18;
 
-/** Phaser Graphics.arc uses too few segments — corners look cut. */
 function arcTo(
   g: Phaser.GameObjects.Graphics,
   cx: number,
@@ -52,20 +53,22 @@ function quadTo(
 /** Cartoon speech from Aizhan — tail aims at her mouth. */
 export class SpeechBubble extends Phaser.GameObjects.Container {
   constructor(scene: Phaser.Scene, text: string, maxW = 340) {
+    const wrapW = Math.min(maxW, W - BUBBLE_MARGIN * 2) - 36;
     const body = scene.add
       .text(0, 0, text, {
         fontFamily: FONT_BODY,
-        fontSize: "20px",
+        fontSize: "16px",
         color: "#1a1208",
         align: "left",
-        wordWrap: { width: maxW - 40 },
-        lineSpacing: 3,
+        wordWrap: { width: wrapW },
+        lineSpacing: 2,
       })
       .setOrigin(0.5);
-    const bw = Math.min(maxW, Math.max(200, body.width + 40));
-    const bh = body.height + 32;
-    const x = BUBBLE_ANCHOR.x + bw / 2;
-    const y = BUBBLE_ANCHOR.y + bh / 2;
+    const bw = Math.min(maxW, Math.max(200, body.width + 36));
+    const bh = body.height + 28;
+    const x = W - BUBBLE_MARGIN - bw / 2;
+    let y = BUBBLE_BOTTOM - bh / 2;
+    if (y - bh / 2 < BUBBLE_MARGIN) y = BUBBLE_MARGIN + bh / 2;
     super(scene, x, y);
 
     const left = -bw / 2;
