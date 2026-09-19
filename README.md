@@ -3,29 +3,40 @@
 Геймификация теста «Нужно ли вам сдавать декларацию?»  
 Прод-логика: [sber-invest.kz/services/taxreturn/test](https://sber-invest.kz/services/taxreturn/test)
 
-## Актуальный концепт (для UX)
+## Актуальный концепт
 
-**«Допрос / Кошмар инспектора»** — персонаж, комната допроса, кошмарный вердикт → пробуждение с QR.
+**«Допрос / Кошмар инспектора»** — персонаж Айжан Н., лампа, допрос → кошмарный вердикт → пробуждение с QR.
 
-| Было (отклонено) | Стало |
-|------------------|--------|
-| Сканер сигнала, Threat Level | Инспектор, лампа, допрос |
-| Гаджет / % угрозы | История + эмоция персонажа |
+Дерево вопросов и **8 юридических исходов не менять**. Меняется только оболочка.
 
-Дерево вопросов и **8 юридических исходов не менять**. Меняется только оболочка и финальная рамка.
+## Запуск прототипа
 
-## Документы для UX
+```bash
+cd game_for_digital_bridge
+python3 -m http.server 8080
+```
+
+Открыть: [http://localhost:8080](http://localhost:8080)
+
+## Цикл
+
+Старт → комната допроса → вопросы как допрос → вердикт в кошмаре → будильник → пробуждение + **QR «Подай декларацию — и спи спокойно»** (WATCH/ALERT).
+
+## Документы
 
 | Файл | Зачем |
 |------|--------|
-| [docs/04-interrogation-nightmare-spec.md](docs/04-interrogation-nightmare-spec.md) | **Спека стенда:** механика, сценарий, состояния, финалы |
-| [docs/05-character-bible-inspector.md](docs/05-character-bible-inspector.md) | **Библия персонажа** + 4 финальных реплики |
-| [docs/01-current-test-analysis.md](docs/01-current-test-analysis.md) | Дерево вопросов (не ломать) |
-| [docs/02-concepts.md](docs/02-concepts.md) | История концептов 1–3 (архив) |
-| [docs/03-tax-scanner-game-spec.md](docs/03-tax-scanner-game-spec.md) | ~~Сканер~~ — superseded |
+| [docs/04-interrogation-nightmare-spec.md](docs/04-interrogation-nightmare-spec.md) | Спека стенда |
+| [docs/05-character-bible-inspector.md](docs/05-character-bible-inspector.md) | Библия персонажа + реплики |
+| [docs/01-current-test-analysis.md](docs/01-current-test-analysis.md) | Дерево (не ломать) |
 
-## Цикл в одном абзаце
+## Код
 
-Старт → комната допроса (лампа + инспектор) → вопросы теста как допрос → вердикт в кошмаре (штраф-сцена только если есть обязанность) → будильник → пробуждение + **QR «Подай декларацию — и спи спокойно»**.
+| Файл | Роль |
+|------|------|
+| `index.html` | Entry |
+| `css/styles.css` | Комната / лампа / утро |
+| `js/tree.js` | Дерево + реплики + LINKS |
+| `js/app.js` | Стейт-машина E0–E5 |
 
-Стиль: мультяшная / anime-inspired графика, без fanservice.
+URL QR/CTA: `LINKS` в `js/tree.js`.
