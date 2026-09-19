@@ -1,8 +1,15 @@
 import Phaser from "phaser";
 import { W, H } from "../game/config";
 import { C } from "../game/theme";
+import type { Heat } from "../logic/tree";
 import { Inspector } from "./Inspector";
 import { Lamp } from "./Lamp";
+
+export function officeStillKey(heat: Heat): string {
+  if (heat === "hot" || heat === "boil") return "bg_office_smile";
+  if (heat === "warm") return "bg_office_press";
+  return "bg_office";
+}
 
 export function coverImage(
   scene: Phaser.Scene,
@@ -34,7 +41,7 @@ export function addStage(
   scene: Phaser.Scene,
   key: string,
   kenBurns = true
-): Lamp {
+): { lamp: Lamp; still: Phaser.GameObjects.Image | null } {
   scene.cameras.main.setBackgroundColor(C.night);
   const still = coverImage(scene, key, kenBurns);
   if (!still) {
@@ -44,7 +51,7 @@ export function addStage(
   }
   const lamp = new Lamp(scene, W / 2, 96);
   addDust(scene);
-  return lamp;
+  return { lamp, still };
 }
 
 export function addDust(scene: Phaser.Scene): void {
@@ -95,21 +102,21 @@ export class PaperSheet extends Phaser.GameObjects.Container {
     super(scene, W / 2, centerY);
     this.paperW = W - 80;
     this.paperH = height;
+    const r = 44;
     const g = scene.add.graphics();
-    g.fillStyle(0x000000, 0.35);
+    g.fillStyle(0x000000, 0.22);
     g.fillRoundedRect(
-      -this.paperW / 2 + 4,
-      -height / 2 + 14,
+      -this.paperW / 2 + 2,
+      -height / 2 + 5,
       this.paperW,
       height,
-      3
+      r
     );
     g.fillStyle(0xfff6ea, 1);
-    g.fillRoundedRect(-this.paperW / 2, -height / 2, this.paperW, height, 3);
-    g.lineStyle(1, 0xe2d0b8, 0.9);
-    g.strokeRoundedRect(-this.paperW / 2, -height / 2, this.paperW, height, 3);
-    g.fillStyle(0x8a1f24, 0.8);
-    g.fillRect(-this.paperW / 2 + 16, -height / 2 + 16, 3, height - 32);
+    g.fillRoundedRect(-this.paperW / 2, -height / 2, this.paperW, height, r);
+    g.lineStyle(2, 0xd8c49a, 1);
+    g.strokeRoundedRect(-this.paperW / 2, -height / 2, this.paperW, height, r);
+    g.setAlpha(0.8);
     this.add(g);
     this.setDepth(10);
     scene.add.existing(this);

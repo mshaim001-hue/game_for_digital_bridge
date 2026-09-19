@@ -1,8 +1,14 @@
 import Phaser from "phaser";
-import { FONT_BODY } from "../game/theme";
+import { C, FONT_BODY, FONT_DISPLAY, T } from "../game/theme";
 
 /** Mouth of Aizhan on the 720×1280 office still (no Ken Burns). */
-export const AIZHAN_MOUTH = { x: 252, y: 382 };
+export const AIZHAN_MOUTH_CALM = { x: 252, y: 382 };
+export const AIZHAN_MOUTH_PRESS = { x: 292, y: 448 };
+export let AIZHAN_MOUTH = { ...AIZHAN_MOUTH_CALM };
+
+export function aimMouth(press: boolean): void {
+  AIZHAN_MOUTH = press ? { ...AIZHAN_MOUTH_PRESS } : { ...AIZHAN_MOUTH_CALM };
+}
 
 /** Bubble position after manual nudges — keep still, only the tail aims at the mouth. */
 const BUBBLE_ANCHOR = { x: 354, y: 130 };
@@ -106,9 +112,11 @@ export class FolderButton extends Phaser.GameObjects.Container {
   private g: Phaser.GameObjects.Graphics;
   private mark?: Phaser.GameObjects.Text;
   private selected = false;
+  private enabled = true;
   private readonly bw: number;
   private readonly bh: number;
   private readonly toggle: boolean;
+  private readonly tone: "yes" | "no" | "cream";
 
   constructor(
     scene: Phaser.Scene,
@@ -117,22 +125,30 @@ export class FolderButton extends Phaser.GameObjects.Container {
     label: string,
     width: number,
     onClick: (selected: boolean) => void,
-    opts?: { toggle?: boolean; height?: number; size?: string }
+    opts?: {
+      toggle?: boolean;
+      height?: number;
+      size?: string;
+      tone?: "yes" | "no";
+      onInfo?: () => void;
+    }
   ) {
     super(scene, x, y);
     this.bw = width;
     this.bh = opts?.height ?? 68;
     this.toggle = opts?.toggle ?? false;
+    this.tone = opts?.tone ?? "cream";
     this.g = scene.add.graphics();
     this.paint();
 
+    const infoPad = opts?.onInfo ? 52 : 0;
     const text = scene.add
-      .text(this.toggle ? -width / 2 + 48 : 8, 0, label, {
+      .text(this.toggle ? -width / 2 + 48 : 0, 0, label, {
         fontFamily: FONT_BODY,
-        fontSize: opts?.size ?? "20px",
-        color: "#f7f1e4",
+        fontSize: opts?.size ?? "32px",
+        color: this.tone === "no" ? T.cream : "#1a1208",
         fontStyle: "bold",
-        wordWrap: { width: width - 64 },
+        wordWrap: { width: width - 64 - infoPad },
       })
       .setOrigin(this.toggle ? 0 : 0.5, 0.5);
 
@@ -140,19 +156,24 @@ export class FolderButton extends Phaser.GameObjects.Container {
       this.mark = scene.add
         .text(-width / 2 + 28, 0, "", {
           fontFamily: FONT_BODY,
-          fontSize: "20px",
-          color: "#c9a227",
+          fontSize: "22px",
+          color: "#8a7018",
           fontStyle: "bold",
         })
         .setOrigin(0.5);
     }
 
+    const hitW = opts?.onInfo ? width - 52 : width;
     const hit = scene.add
-      .zone(0, 0, width, this.bh)
+      .zone(opts?.onInfo ? -26 : 0, 0, hitW, this.bh)
       .setInteractive({ useHandCursor: true });
-    hit.on("pointerdown", () => this.setScale(0.98));
+    hit.on("pointerdown", () => {
+      if (!this.enabled) return;
+      this.setScale(0.98);
+    });
     hit.on("pointerup", () => {
       this.setScale(1);
+      if (!this.enabled) return;
       if (this.toggle) {
         this.selected = !this.selected;
         this.paint();
@@ -162,7 +183,33 @@ export class FolderButton extends Phaser.GameObjects.Container {
     });
     hit.on("pointerout", () => this.setScale(1));
 
-    this.add(this.mark ? [this.g, this.mark, text, hit] : [this.g, text, hit]);
+    const kids: Phaser.GameObjects.GameObject[] = this.mark
+      ? [this.g, this.mark, text, hit]
+      : [this.g, text, hit];
+
+    if (opts?.onInfo) {
+      const ix = width / 2 - 26;
+      const disc = scene.add.graphics();
+      disc.fillStyle(0xffffff, 1);
+      disc.fillCircle(ix, 0, 16);
+      disc.lineStyle(2.5, C.gold, 1);
+      disc.strokeCircle(ix, 0, 16);
+      const markI = scene.add
+        .text(ix, -1, "i", {
+          fontFamily: FONT_DISPLAY,
+          fontSize: "20px",
+          color: "#1a1208",
+          fontStyle: "bold",
+        })
+        .setOrigin(0.5);
+      const infoHit = scene.add
+        .zone(ix, 0, 44, this.bh)
+        .setInteractive({ useHandCursor: true });
+      infoHit.on("pointerup", () => opts.onInfo?.());
+      kids.push(disc, markI, infoHit);
+    }
+
+    this.add(kids);
     this.setDepth(12);
     scene.add.existing(this);
   }
@@ -170,12 +217,35 @@ export class FolderButton extends Phaser.GameObjects.Container {
   private paint(): void {
     const w = this.bw;
     const h = this.bh;
+    const r = h / 2;
     this.g.clear();
-    this.g.fillStyle(0x000000, 0.35);
-    this.g.fillRoundedRect(-w / 2 + 3, -h / 2 + 5, w, h, 6);
-    this.g.fillStyle(this.selected ? 0x2a2418 : 0x161310, 0.94);
-    this.g.fillRoundedRect(-w / 2, -h / 2, w, h, 6);
-    this.g.fillStyle(this.selected ? 0xe0b84a : 0xc9a227, 1);
-    this.g.fillRect(-w / 2, -h / 2, 10, h);
+    if (this.tone === "yes") {
+      this.g.fillStyle(C.gold, 1);
+      this.g.fillRoundedRect(-w / 2, -h / 2, w, h, r);
+      this.g.lineStyle(3, C.goldSoft, 1);
+      this.g.strokeRoundedRect(-w / 2, -h / 2, w, h, r);
+      this.g.setAlpha(1);
+      return;
+    }
+    if (this.tone === "no") {
+      this.g.fillStyle(0x3a3144, 1);
+      this.g.fillRoundedRect(-w / 2, -h / 2, w, h, r);
+      this.g.lineStyle(3, 0x5a4f66, 1);
+      this.g.strokeRoundedRect(-w / 2, -h / 2, w, h, r);
+      this.g.setAlpha(1);
+      return;
+    }
+    this.g.fillStyle(0x000000, 0.22);
+    this.g.fillRoundedRect(-w / 2 + 2, -h / 2 + 5, w, h, r);
+    this.g.fillStyle(this.selected ? 0xffe7b8 : 0xfff6ea, 1);
+    this.g.fillRoundedRect(-w / 2, -h / 2, w, h, r);
+    this.g.lineStyle(2, this.selected ? 0xc9a227 : 0xd8c49a, 1);
+    this.g.strokeRoundedRect(-w / 2, -h / 2, w, h, r);
+    this.g.setAlpha(0.8);
+  }
+
+  setEnabled(v: boolean): void {
+    this.enabled = v;
+    this.setAlpha(v ? 1 : 0.38);
   }
 }

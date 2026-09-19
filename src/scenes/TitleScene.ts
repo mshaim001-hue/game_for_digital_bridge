@@ -5,7 +5,6 @@ import { UIButton } from "../objects/UIButton";
 import { addStage, bottomScrim } from "../objects/Cinematic";
 import { W } from "../game/config";
 import { FONT_BODY, FONT_DISPLAY, T } from "../game/theme";
-import { dbg, dbgError } from "../debug/log";
 
 export class TitleScene extends Phaser.Scene {
   private starting = false;
@@ -15,7 +14,6 @@ export class TitleScene extends Phaser.Scene {
   }
 
   create(): void {
-    dbg("Title: create");
     this.starting = false;
     track({ name: "session_start", sessionId: newSessionId() });
 
@@ -33,20 +31,10 @@ export class TitleScene extends Phaser.Scene {
       });
     };
 
-    const kicker = this.add
-      .text(W / 2, 820, "Digital Bridge · стенд", {
-        fontFamily: FONT_BODY,
-        fontSize: "16px",
-        color: T.gold,
-      })
-      .setOrigin(0.5)
-      .setDepth(8);
-    fadeIn(kicker, 120);
-
     const title = this.add
-      .text(W / 2, 920, "Тебе приснится\nэто…", {
+      .text(W / 2, 900, "Садитесь.\nУ налоговой к вам\nнесколько вопросов…", {
         fontFamily: FONT_DISPLAY,
-        fontSize: "46px",
+        fontSize: "36px",
         color: T.cream,
         align: "center",
         lineSpacing: 8,
@@ -58,8 +46,8 @@ export class TitleScene extends Phaser.Scene {
     const sub = this.add
       .text(
         W / 2,
-        1054,
-        "Короткий допрос по мотивам реального теста.\nУзнаешь, нужен ли тебе сон спокойнее.",
+        1058,
+        "Ответьте на них — и узнайте,\nнужно ли вам подавать декларацию.",
         {
           fontFamily: FONT_BODY,
           fontSize: "18px",
@@ -75,24 +63,20 @@ export class TitleScene extends Phaser.Scene {
     const begin = (): void => {
       if (this.starting) return;
       this.starting = true;
-      dbg("Title: click Начать допрос");
       try {
         this.sound.unlock();
-      } catch (err) {
-        dbgError("Title: sound.unlock", err);
+      } catch {
+        /* no audio in this build */
       }
       try {
         const id = newSessionId();
         flow.start(id);
         track({ name: "game_start", sessionId: id });
-        dbg(`Title: flow.start step=${flow.step}`);
         this.time.delayedCall(1, () => {
           this.scene.start("Interrogation");
-          dbg("Title: scene.start Interrogation called");
         });
-      } catch (err) {
+      } catch {
         this.starting = false;
-        dbgError("Title: start click", err);
       }
     };
 
@@ -109,15 +93,5 @@ export class TitleScene extends Phaser.Scene {
       .setDepth(55)
       .setInteractive({ useHandCursor: true })
       .on("pointerup", begin);
-
-    const note = this.add
-      .text(W / 2, 1248, "~1–2 мин · юридическая логика = прод-тест", {
-        fontFamily: FONT_BODY,
-        fontSize: "14px",
-        color: T.muted,
-      })
-      .setOrigin(0.5)
-      .setDepth(8);
-    fadeIn(note, 760);
   }
 }

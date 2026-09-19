@@ -2,9 +2,8 @@ import Phaser from "phaser";
 import { flow } from "../logic/flow";
 import { track } from "../analytics/analytics";
 import { FolderButton, SpeechBubble } from "../objects/Talk";
-import { addStage, bottomScrim } from "../objects/Cinematic";
+import { addStage, bottomScrim, officeStillKey } from "../objects/Cinematic";
 import { W, H } from "../game/config";
-import { FONT_BODY, T } from "../game/theme";
 
 export class AbortScene extends Phaser.Scene {
   constructor() {
@@ -12,7 +11,7 @@ export class AbortScene extends Phaser.Scene {
   }
 
   create(): void {
-    addStage(this, "bg_office", false);
+    addStage(this, officeStillKey(flow.heat), false);
     this.add.rectangle(W / 2, H / 2, W, H, 0x000000, 0.28).setDepth(-1);
 
     new SpeechBubble(
@@ -33,13 +32,5 @@ export class AbortScene extends Phaser.Scene {
       this.scene.start("Title");
     });
 
-    this.add
-      .text(W / 2, H - 210, "Прервано", {
-        fontFamily: FONT_BODY,
-        fontSize: "14px",
-        color: T.gold,
-      })
-      .setOrigin(0.5)
-      .setDepth(12);
   }
 }

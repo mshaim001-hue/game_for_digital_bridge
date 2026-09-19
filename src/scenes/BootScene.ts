@@ -1,7 +1,6 @@
 import Phaser from "phaser";
 import { W, H } from "../game/config";
 import { FONT_DISPLAY, T } from "../game/theme";
-import { dbg } from "../debug/log";
 
 /** Generate soft procedural textures once; load cinematic stills. */
 export class BootScene extends Phaser.Scene {
@@ -12,17 +11,18 @@ export class BootScene extends Phaser.Scene {
   }
 
   preload(): void {
-    dbg("Boot: preload");
     this.add.rectangle(W / 2, H / 2, W, H, 0x0c0a0f);
     this.add
       .text(W / 2, H / 2, "Камера…", {
         fontFamily: FONT_DISPLAY,
         fontSize: "28px",
-        color: T.gold,
+        color: T.cream,
       })
       .setOrigin(0.5);
 
     this.load.image("bg_office", "art/office-portrait.png");
+    this.load.image("bg_office_press", "art/office-press.png");
+    this.load.image("bg_office_smile", "art/office-smile.png");
     this.load.image("bg_title", "art/title-portrait.png");
     this.load.image("bg_wake", "art/wake-portrait.png");
   }
@@ -43,7 +43,6 @@ export class BootScene extends Phaser.Scene {
     const go = (): void => {
       if (this.booted) return;
       this.booted = true;
-      dbg("Boot: start Title");
       this.scene.start("Title");
     };
 

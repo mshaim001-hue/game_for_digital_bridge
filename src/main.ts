@@ -5,10 +5,6 @@ import "@fontsource/manrope/600.css";
 import "@fontsource/manrope/700.css";
 import "@fontsource/manrope/800.css";
 import { createGame } from "./game/config";
-import { dbg, hookGlobalErrors } from "./debug/log";
-
-hookGlobalErrors();
-dbg("main: boot");
 
 const parent = document.getElementById("game");
 if (!parent) {
@@ -16,13 +12,11 @@ if (!parent) {
 }
 
 const game = createGame("game");
-dbg("main: Phaser.Game created");
 
 type BoothWindow = Window & {
   __stats?: () => unknown;
   __game?: Phaser.Game;
   __ANALYTICS_URL?: string;
-  __log?: () => unknown;
 };
 
 document.addEventListener("contextmenu", (e) => e.preventDefault());
@@ -30,7 +24,6 @@ document.addEventListener("contextmenu", (e) => e.preventDefault());
 document.addEventListener(
   "pointerdown",
   () => {
-    dbg("main: first pointerdown, unlock audio");
     game.sound.unlock();
   },
   { once: true }
@@ -40,9 +33,7 @@ if (new URLSearchParams(window.location.search).has("kiosk")) {
   const enterKiosk = (): void => {
     const el = document.documentElement;
     if (!document.fullscreenElement && el.requestFullscreen) {
-      void el.requestFullscreen().catch((err: unknown) => {
-        dbg(`kiosk fullscreen fail: ${String(err)}`, "warn");
-      });
+      void el.requestFullscreen().catch(() => undefined);
     }
   };
   document.addEventListener(

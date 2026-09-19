@@ -2,7 +2,7 @@ import Phaser from "phaser";
 import { flow } from "../logic/flow";
 import { FINALE_SHELL, VERDICTS } from "../logic/tree";
 import { FolderButton, SpeechBubble } from "../objects/Talk";
-import { addStage, bottomScrim } from "../objects/Cinematic";
+import { addStage, bottomScrim, officeStillKey } from "../objects/Cinematic";
 import { W, H } from "../game/config";
 import { FONT_BODY, FONT_DISPLAY, T } from "../game/theme";
 
@@ -21,7 +21,7 @@ export class VerdictScene extends Phaser.Scene {
     const shell = FINALE_SHELL[verdict.finale];
     flow.bumpHeat(shell.heat);
 
-    const lamp = addStage(this, "bg_office", false);
+    const { lamp } = addStage(this, officeStillKey(flow.heat), false);
     lamp.setHeat(flow.heat);
 
     if (verdict.finale === "OUT") {
@@ -49,15 +49,6 @@ export class VerdictScene extends Phaser.Scene {
           .setDepth(12);
       });
     }
-
-    this.add
-      .text(W / 2, H - 188, verdict.badge, {
-        fontFamily: FONT_BODY,
-        fontSize: "15px",
-        color: T.gold,
-      })
-      .setOrigin(0.5)
-      .setDepth(12);
 
     this.add
       .text(W / 2, H - 156, verdict.legal, {

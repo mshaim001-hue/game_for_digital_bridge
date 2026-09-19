@@ -133,7 +133,7 @@ export class InterrogationFlow {
           kind: "yesno",
           id: "q1_1",
           wave: 1,
-          title: "Вы являетесь гражданином Республики Казахстан?",
+          title: "Вы гражданин Республики Казахстан?",
           hint: "Гражданство РК.",
         };
       case "q1_2":
@@ -157,7 +157,7 @@ export class InterrogationFlow {
           kind: "chips",
           id: "q2_1",
           wave: 2,
-          title: "Относитесь ли вы к обязательным категориям?",
+          title: "Относитесь ли вы к одной из следующих категорий?",
           hint: "Глава дела: Обязательные.",
           items: MANDATORY_CATEGORIES,
         };

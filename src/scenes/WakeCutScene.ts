@@ -25,7 +25,7 @@ export class WakeCutScene extends Phaser.Scene {
       .text(W / 2, H / 2 + 48, "6:00", {
         fontFamily: FONT_DISPLAY,
         fontSize: "52px",
-        color: T.gold,
+        color: "#0c0a0f",
       })
       .setOrigin(0.5);
 

@@ -3,16 +3,19 @@ import { flow, type FlowEvent, type StepId } from "../logic/flow";
 import { INTRO_SPEECH } from "../logic/tree";
 import { track, trackVerdict } from "../analytics/analytics";
 import { Lamp } from "../objects/Lamp";
-import { FolderButton, SpeechBubble } from "../objects/Talk";
-import { addStage, bottomScrim } from "../objects/Cinematic";
+import { FolderButton, SpeechBubble, aimMouth } from "../objects/Talk";
+import { addStage, bottomScrim, coverImage, officeStillKey } from "../objects/Cinematic";
 import { W, H } from "../game/config";
 import { FONT_BODY, FONT_DISPLAY, T } from "../game/theme";
-import { dbg, dbgError } from "../debug/log";
 
 const IDLE_ABORT_MS = 120_000;
 
 export class InterrogationScene extends Phaser.Scene {
   private lamp!: Lamp;
+  private still: Phaser.GameObjects.Image | null = null;
+  private pressed = false;
+  private smiled = false;
+  private pendingSmile = false;
   private uiRoot!: Phaser.GameObjects.Container;
   private reactionText!: Phaser.GameObjects.Text;
   private stamps: Phaser.GameObjects.Text[] = [];
@@ -20,20 +23,24 @@ export class InterrogationScene extends Phaser.Scene {
   private idleTimer?: Phaser.Time.TimerEvent;
   private selected = new Set<string>();
   private particles?: Phaser.GameObjects.Particles.ParticleEmitter;
+  private tip?: Phaser.GameObjects.Container;
 
   constructor() {
     super("Interrogation");
   }
 
   create(): void {
-    dbg(`Interrogation: create step=${flow.step}`);
-    try {
-    // Same finger that tapped Title "Начать" is still down over "Да".
     this.locked = true;
     this.selected = new Set(flow.selected);
 
-    this.lamp = addStage(this, "bg_office", false);
+    this.smiled = flow.heat === "hot" || flow.heat === "boil";
+    this.pressed = flow.heat !== "cold";
+    aimMouth(this.pressed);
+    const stage = addStage(this, officeStillKey(flow.heat), false);
+    this.lamp = stage.lamp;
+    this.still = stage.still;
     this.lamp.setHeat(flow.heat);
+    if (this.pressed) this.cameras.main.setZoom(1.04);
 
     this.add
       .text(W - 28, 36, "✕  Прервать", {
@@ -59,7 +66,7 @@ export class InterrogationScene extends Phaser.Scene {
 
     this.uiRoot = this.add.container(0, 0).setDepth(11);
     this.reactionText = this.add
-      .text(W / 2, 520, "", {
+      .text(W / 2, 880, "", {
         fontFamily: FONT_DISPLAY,
         fontSize: "26px",
         color: T.speech,
@@ -88,12 +95,7 @@ export class InterrogationScene extends Phaser.Scene {
     this.renderStep();
     this.time.delayedCall(420, () => {
       this.locked = false;
-      dbg("Interrogation: answers live");
     });
-    dbg("Interrogation: create done");
-    } catch (err) {
-      dbgError("Interrogation: create", err);
-    }
   }
 
   private bumpIdle(): void {
@@ -112,7 +114,6 @@ export class InterrogationScene extends Phaser.Scene {
   }
 
   private renderStep(): void {
-    try {
     this.clearUi();
     this.lamp.setHeat(flow.heat);
 
@@ -128,7 +129,6 @@ export class InterrogationScene extends Phaser.Scene {
 
     const speech = flow.showIntro ? `«${INTRO_SPEECH}»\n\n${q.title}` : q.title;
     flow.showIntro = false;
-    dbg(`Interrogation: SpeechBubble "${speech.slice(0, 40)}…"`);
     const bubble = new SpeechBubble(this, speech, 400);
     this.uiRoot.add(bubble);
 
@@ -149,98 +149,140 @@ export class InterrogationScene extends Phaser.Scene {
     });
     this.refreshStamps();
 
+    const chipRow = 74;
     const chipRows = q.kind === "chips" ? Math.ceil(q.items.length / 2) : 0;
-    const dockH = q.kind === "yesno" ? 200 : chipRows * 58 + 130;
+    const dockH = q.kind === "yesno" ? 340 : chipRows * chipRow + 150;
     const scrimFrom = H - dockH - 36;
     const scrim = bottomScrim(this, scrimFrom, 0.72);
     this.uiRoot.add(scrim);
-
-    if (q.hint) {
-      const hint = this.add
-        .text(W / 2, scrimFrom + 22, q.hint, {
-          fontFamily: FONT_BODY,
-          fontSize: "14px",
-          color: T.gold,
-        })
-        .setOrigin(0.5)
-        .setDepth(12);
-      this.uiRoot.add(hint);
-    }
 
     if (q.kind === "yesno") {
       const yes = new FolderButton(
         this,
         W / 2,
-        H - 148,
+        H - 280,
         "Да",
         W - 80,
-        () => this.onYesNo(q.id, true)
+        () => this.onYesNo(q.id, true),
+        { height: 88, size: "34px", tone: "yes" }
       );
       const no = new FolderButton(
         this,
         W / 2,
-        H - 70,
+        H - 168,
         "Нет",
         W - 80,
-        () => this.onYesNo(q.id, false)
+        () => this.onYesNo(q.id, false),
+        { height: 88, size: "34px", tone: "no" }
       );
       this.uiRoot.add([yes, no]);
-      dbg(`Interrogation: renderStep ok ${flow.step} yesno`);
       return;
     }
 
     this.selected = new Set();
     const cols = 2;
     const chipW = (W - 72) / cols - 8;
-    const startY = scrimFrom + (q.hint ? 56 : 36);
+    const startY = scrimFrom + 36;
     q.items.forEach((item, i) => {
       const col = i % cols;
       const row = Math.floor(i / cols);
       const chip = new FolderButton(
         this,
         36 + chipW / 2 + col * (chipW + 12),
-        startY + row * 58,
+        startY + row * chipRow,
         item.label,
         chipW,
         (on) => {
           if (on) this.selected.add(item.id);
           else this.selected.delete(item.id);
+          yes.setEnabled(this.selected.size > 0);
           this.bumpIdle();
         },
-        { toggle: true, height: 52, size: "14px" }
+        {
+          toggle: true,
+          height: 64,
+          size: "18px",
+          onInfo: item.tip
+            ? () => this.showTip(item.tipTitle ?? item.label, item.tip as string)
+            : undefined,
+        }
       );
       this.uiRoot.add(chip);
     });
 
-    const confirmY = startY + chipRows * 58 + 40;
-    const confirm = new FolderButton(
+    const confirmY = startY + chipRows * chipRow + 44;
+    const yes = new FolderButton(
       this,
       W / 2 - 150,
       confirmY,
-      "В дело",
+      "Да",
       280,
-      () => this.onChips(q.id, [...this.selected])
+      () => this.onChips(q.id, [...this.selected]),
+      { tone: "yes" }
     );
-    const none = new FolderButton(
+    yes.setEnabled(false);
+    const no = new FolderButton(
       this,
       W / 2 + 150,
       confirmY,
-      "Ничего",
+      "Нет",
       280,
-      () => this.onChips(q.id, [])
+      () => this.onChips(q.id, []),
+      { tone: "no" }
     );
-    this.uiRoot.add([confirm, none]);
-    dbg(`Interrogation: renderStep ok ${flow.step}`);
-    } catch (err) {
-      dbgError("Interrogation: renderStep", err);
-    }
+    this.uiRoot.add([yes, no]);
+  }
+
+  private showTip(title: string, body: string): void {
+    this.closeTip();
+    const root = this.add.container(0, 0).setDepth(50);
+    const veil = this.add
+      .rectangle(W / 2, H / 2, W, H, 0x000000, 0.55)
+      .setInteractive();
+    const cardW = W - 72;
+    const titleT = this.add
+      .text(W / 2, 0, title, {
+        fontFamily: FONT_DISPLAY,
+        fontSize: "22px",
+        color: T.ink,
+        align: "center",
+        wordWrap: { width: cardW - 48 },
+        lineSpacing: 4,
+      })
+      .setOrigin(0.5, 0);
+    const bodyT = this.add
+      .text(W / 2, 0, body, {
+        fontFamily: FONT_BODY,
+        fontSize: "18px",
+        color: T.ink,
+        align: "left",
+        wordWrap: { width: cardW - 48 },
+        lineSpacing: 5,
+      })
+      .setOrigin(0.5, 0);
+    const cardH = titleT.height + bodyT.height + 88;
+    const cardY = H / 2;
+    const card = this.add.graphics();
+    card.fillStyle(0xfff6ea, 1);
+    card.fillRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 28);
+    card.lineStyle(2, 0xd8c49a, 1);
+    card.strokeRoundedRect(-cardW / 2, -cardH / 2, cardW, cardH, 28);
+    card.setPosition(W / 2, cardY);
+    card.setAlpha(0.92);
+    titleT.setY(cardY - cardH / 2 + 28);
+    bodyT.setY(titleT.y + titleT.height + 16);
+    veil.on("pointerup", () => this.closeTip());
+    root.add([veil, card, titleT, bodyT]);
+    this.tip = root;
+  }
+
+  private closeTip(): void {
+    this.tip?.destroy(true);
+    this.tip = undefined;
   }
 
   private refreshStamps(): void {
-    this.stamps.forEach((s, i) => {
-      const on = flow.wave >= i + 1;
-      s.setColor(on ? T.gold : T.dim);
-    });
+    this.stamps.forEach((s) => s.setColor(T.dim));
   }
 
   private onYesNo(id: StepId, yes: boolean): void {
@@ -250,6 +292,7 @@ export class InterrogationScene extends Phaser.Scene {
 
   private onChips(id: StepId, ids: string[]): void {
     if (this.locked) return;
+    this.pendingSmile = ids.length > 0;
     this.handleEvent(flow.confirmChips(id, ids));
   }
 
@@ -276,6 +319,12 @@ export class InterrogationScene extends Phaser.Scene {
         flow.bumpHeat(event.heat);
         this.lamp.setHeat(flow.heat);
       }
+      if (this.pendingSmile) {
+        this.pendingSmile = false;
+        this.cutStill("bg_office_smile", 1.06);
+        this.time.delayedCall(560, after);
+        return;
+      }
       after();
     }
   }
@@ -293,18 +342,61 @@ export class InterrogationScene extends Phaser.Scene {
       flow.heat === "hot" || flow.heat === "boil" ? 0.007 : 0.003
     );
     this.particles?.explode(14, W / 2, H * 0.72);
+    if (this.pendingSmile) {
+      this.pendingSmile = false;
+      this.cutStill("bg_office_smile", 1.06);
+    } else if (flow.heat !== "cold") {
+      this.cutStill("bg_office_press", 1.04);
+    }
 
+    this.clearUi();
+    const hold = 1800;
     this.reactionText.setText(text).setAlpha(1);
     this.tweens.add({
       targets: this.reactionText,
       alpha: 0,
-      delay: 480,
-      duration: 220,
+      delay: hold,
+      duration: 280,
       onComplete: done,
     });
   }
 
+  private cutStill(key: string, zoom: number): void {
+    if (key === "bg_office_smile") {
+      if (this.smiled || !this.textures.exists(key)) return;
+      this.smiled = true;
+      this.pressed = true;
+    } else if (this.pressed || this.smiled || !this.textures.exists(key)) {
+      return;
+    } else {
+      this.pressed = true;
+    }
+    aimMouth(true);
+    const next = coverImage(this, key, false);
+    if (!next) return;
+    next.setAlpha(0).setDepth(-19);
+    this.tweens.add({
+      targets: next,
+      alpha: 1,
+      duration: 520,
+      ease: "Sine.out",
+      onComplete: () => {
+        this.still?.destroy();
+        this.still = next;
+        next.setDepth(-20);
+      },
+    });
+    this.tweens.add({
+      targets: this.cameras.main,
+      zoom,
+      duration: 560,
+      ease: "Sine.out",
+    });
+  }
+
   shutdown(): void {
+    this.closeTip();
     this.idleTimer?.remove(false);
+    aimMouth(false);
   }
 }
