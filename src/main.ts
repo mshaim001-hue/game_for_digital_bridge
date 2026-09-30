@@ -29,21 +29,7 @@ document.addEventListener(
   { once: true }
 );
 
-if (new URLSearchParams(window.location.search).has("kiosk")) {
-  const enterKiosk = (): void => {
-    const el = document.documentElement;
-    if (!document.fullscreenElement && el.requestFullscreen) {
-      void el.requestFullscreen().catch(() => undefined);
-    }
-  };
-  document.addEventListener(
-    "pointerup",
-    () => {
-      window.setTimeout(enterKiosk, 400);
-    },
-    { once: true }
-  );
-}
+installFullscreen();
 
 window.addEventListener("visibilitychange", () => {
   if (document.visibilityState === "visible") {
@@ -62,3 +48,60 @@ booth.__stats = () => {
   }
 };
 booth.__game = game;
+
+type FullscreenDocument = Document & { webkitFullscreenElement?: Element | null };
+type FullscreenRoot = HTMLElement & { webkitRequestFullscreen?: () => void };
+
+/** Phone or tablet, or an explicit ?kiosk=1 link. Desktop stays windowed. */
+function wantsFullscreen(): boolean {
+  if (new URLSearchParams(window.location.search).has("kiosk")) return true;
+  const nav = navigator as Navigator & { standalone?: boolean };
+  if (nav.standalone) return false;
+  if (
+    window.matchMedia("(display-mode: standalone), (display-mode: fullscreen)")
+      .matches
+  ) {
+    return false;
+  }
+  return (
+    navigator.maxTouchPoints > 0 &&
+    window.matchMedia("(pointer: coarse)").matches
+  );
+}
+
+function isFullscreen(): boolean {
+  const doc = document as FullscreenDocument;
+  return Boolean(document.fullscreenElement || doc.webkitFullscreenElement);
+}
+
+function enterFullscreen(): void {
+  if (isFullscreen()) return;
+  const el = document.documentElement as FullscreenRoot;
+  // Must run inside the tap. A delay drops the user-gesture token and
+  // Chrome keeps the address bar.
+  if (el.requestFullscreen) {
+    void el.requestFullscreen({ navigationUI: "hide" }).then(
+      () => {
+        const orientation = screen.orientation as ScreenOrientation & {
+          lock?: (orientation: "portrait") => Promise<void>;
+        };
+        void orientation.lock?.("portrait").catch(() => undefined);
+      },
+      () => undefined
+    );
+    return;
+  }
+  el.webkitRequestFullscreen?.();
+}
+
+function installFullscreen(): void {
+  if (!wantsFullscreen()) return;
+  const sync = (): void => {
+    game.scale.refresh();
+  };
+  document.addEventListener("fullscreenchange", sync);
+  document.addEventListener("webkitfullscreenchange", sync);
+  document.addEventListener("pointerup", () => {
+    enterFullscreen();
+  });
+}
