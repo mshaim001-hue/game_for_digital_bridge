@@ -32,7 +32,7 @@ export class TitleScene extends Phaser.Scene {
     };
 
     const title = this.add
-      .text(W / 2, 900, "Садитесь.\nУ налоговой к вам\nнесколько вопросов…", {
+      .text(W / 2, 860, "Здравствуйте!\nУ налоговой к Вам\nнесколько вопросов...", {
         fontFamily: FONT_DISPLAY,
         fontSize: "36px",
         color: T.cream,
@@ -46,7 +46,7 @@ export class TitleScene extends Phaser.Scene {
     const sub = this.add
       .text(
         W / 2,
-        1058,
+        1024,
         "Ответьте на них — и узнайте,\nнужно ли вам подавать декларацию.",
         {
           fontFamily: FONT_BODY,
@@ -59,6 +59,17 @@ export class TitleScene extends Phaser.Scene {
       .setOrigin(0.5)
       .setDepth(8);
     fadeIn(sub, 460);
+
+    const period = this.add
+      .text(W / 2, 1116, "Проверяем обстоятельства за 2025 год.", {
+        fontFamily: FONT_BODY,
+        fontSize: "16px",
+        color: T.cream,
+        align: "center",
+      })
+      .setOrigin(0.5)
+      .setDepth(8);
+    fadeIn(period, 560);
 
     const begin = (): void => {
       if (this.starting) return;
@@ -80,7 +91,7 @@ export class TitleScene extends Phaser.Scene {
       }
     };
 
-    const start = new UIButton(this, W / 2, 1170, {
+    const start = new UIButton(this, W / 2, 1208, {
       label: "Начать допрос",
       width: 420,
       height: 84,
@@ -89,7 +100,7 @@ export class TitleScene extends Phaser.Scene {
     start.setAlpha(1);
 
     this.add
-      .zone(W / 2, 1185, W, 190)
+      .zone(W / 2, 1208, W, 160)
       .setDepth(55)
       .setInteractive({ useHandCursor: true })
       .on("pointerup", begin);

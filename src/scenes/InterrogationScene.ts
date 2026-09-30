@@ -142,7 +142,7 @@ export class InterrogationScene extends Phaser.Scene {
     const bubble = new SpeechBubble(this, speech, 360);
     this.uiRoot.add(bubble);
 
-    const chipRow = 74;
+    const chipRow = 112;
     const chipRows = q.kind === "chips" ? Math.ceil(q.items.length / 2) : 0;
     const dockH = q.kind === "yesno" ? 340 : chipRows * chipRow + 150;
     const scrimFrom = H - dockH - 36;
@@ -193,8 +193,8 @@ export class InterrogationScene extends Phaser.Scene {
         },
         {
           toggle: true,
-          height: 64,
-          size: "18px",
+          height: 100,
+          size: "16px",
           onInfo: item.tip
             ? () => this.showTip(item.tipTitle ?? item.label, item.tip as string)
             : undefined,

@@ -1,6 +1,6 @@
 import Phaser from "phaser";
 import { flow } from "../logic/flow";
-import { LINKS, VERDICTS } from "../logic/tree";
+import { VERDICTS } from "../logic/tree";
 import { track } from "../analytics/analytics";
 import { FolderButton } from "../objects/Talk";
 import { addStage, PaperSheet } from "../objects/Cinematic";
@@ -8,14 +8,10 @@ import { W, H } from "../game/config";
 import { FONT_BODY, FONT_DISPLAY, T } from "../game/theme";
 
 const CTA_TELEGRAM =
-  "Но обязательно подпишитесь на наш Телеграм-канал, чтобы быть в курсе.";
+  "Но обязательно подпишитесь на наш Telegram-канал, чтобы быть в курсе новостей.";
 const CTA_AIZHAN =
   "Свяжитесь с AI-Zhan — нашим ИИ-агентом, она расскажет, что делать дальше.";
-const CTA_SBER = "Сбер-инвест вам обязательно поможет.";
-
-function qrUrl(data: string): string {
-  return `https://api.qrserver.com/v1/create-qr-code/?size=400x400&data=${encodeURIComponent(data)}`;
-}
+const CTA_SBER = "Sber-invest.kz вам обязательно поможет";
 
 export class WakeScene extends Phaser.Scene {
   constructor() {
@@ -31,8 +27,7 @@ export class WakeScene extends Phaser.Scene {
     const verdict = VERDICTS[code];
     const mustFile = verdict.finale === "WATCH" || verdict.finale === "ALERT";
     const cta = mustFile ? CTA_AIZHAN : CTA_TELEGRAM;
-    const qrData = mustFile ? LINKS.ai : LINKS.telegram;
-    const qrKey = mustFile ? "wake_qr_ai" : "wake_qr_tg";
+    const qrKey = mustFile ? "qr_aizhan" : "qr_telegram";
 
     const { still } = addStage(this, "bg_wake", false);
     // Slight raise so faces clear the QR, but keep head in frame and fill the bottom
@@ -49,15 +44,13 @@ export class WakeScene extends Phaser.Scene {
 
     const title = mustFile
       ? "Вы обязаны подавать декларацию."
-      : verdict.finale === "OUT"
-        ? "Декларация вам не нужна."
-        : "Пока декларация не нужна.";
+      : "По вашим ответам основания для подачи декларации не выявлены.";
     const body = mustFile
       ? "ФНО 270 — ежегодно. ФНО 250 — если ещё не подавалась ранее или по требованию налогового органа."
       : verdict.legal;
 
-    this.add
-      .text(W / 2, top + 40, title, {
+    const titleT = this.add
+      .text(W / 2, top + 32, title, {
         fontFamily: FONT_DISPLAY,
         fontSize: "32px",
         color: T.ink,
@@ -69,7 +62,7 @@ export class WakeScene extends Phaser.Scene {
       .setDepth(12);
 
     const bodyT = this.add
-      .text(W / 2, top + 136, body, {
+      .text(W / 2, titleT.y + titleT.height + 18, body, {
         fontFamily: FONT_BODY,
         fontSize: "14px",
         color: T.ink,
@@ -92,10 +85,10 @@ export class WakeScene extends Phaser.Scene {
       .setOrigin(0.5, 0)
       .setDepth(12);
 
-    let qrAnchorY = ctaT.y + ctaT.height + 128;
+    let contentBottom = ctaT.y + ctaT.height;
     if (mustFile) {
       const sberT = this.add
-        .text(W / 2, ctaT.y + ctaT.height + 16, CTA_SBER, {
+        .text(W / 2, contentBottom + 16, CTA_SBER, {
           fontFamily: FONT_DISPLAY,
           fontSize: "26px",
           color: T.speech,
@@ -107,13 +100,15 @@ export class WakeScene extends Phaser.Scene {
         .setDepth(12);
       sberT.setStroke("#1a1208", 5);
       sberT.setShadow(0, 2, "#00000055", 4, true, true);
-      qrAnchorY = sberT.y + sberT.height + 118;
+      contentBottom = sberT.y + sberT.height;
     }
 
     const btnY = top + paperH - 68;
-    const qrSize = 256;
-    const qrMaxY = btnY - 44 - qrSize / 2 - 20;
-    this.placeQr(W / 2, Math.min(qrAnchorY, qrMaxY) + 12, qrKey, qrData, qrSize);
+    const qrTop = contentBottom + 16;
+    const qrBottom = btnY - 56;
+    const qrSize = Math.min(240, Math.max(120, qrBottom - qrTop));
+    const qrY = qrTop + (qrBottom - qrTop) / 2;
+    this.placeQr(W / 2, qrY, qrKey, qrSize);
 
     new FolderButton(
       this,
@@ -126,28 +121,10 @@ export class WakeScene extends Phaser.Scene {
     );
   }
 
-  private placeQr(
-    x: number,
-    y: number,
-    key: string,
-    data: string,
-    size = 256
-  ): void {
-    const show = (): void => {
-      if (!this.textures.exists(key)) return;
-      this.add
-        .image(x, y, key)
-        .setOrigin(0.5)
-        .setDisplaySize(size, size)
-        .setDepth(12);
-    };
-    if (this.textures.exists(key)) {
-      show();
-      return;
-    }
-    this.load.image(key, qrUrl(data));
-    this.load.once(Phaser.Loader.Events.COMPLETE, show);
-    this.load.start();
+  private placeQr(x: number, y: number, key: string, size: number): void {
+    if (!this.textures.exists(key)) return;
+    const img = this.add.image(x, y, key).setOrigin(0.5).setDepth(12);
+    img.setScale(size / Math.max(img.width, img.height));
   }
 
   private restartGame(): void {
