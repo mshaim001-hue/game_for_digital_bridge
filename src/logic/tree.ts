@@ -287,6 +287,51 @@ export const LINKS = {
   products: "https://sber-invest.kz/",
 } as const;
 
+/** Last-screen protocol. Each finale has its own copy. */
+export type ProtocolCard = {
+  title: string;
+  body: string;
+  link: string;
+  href: string;
+  scan: string;
+  qr: "qr_aizhan" | "qr_telegram";
+};
+
+export const PROTOCOL: Record<Finale, ProtocolCard> = {
+  OUT: {
+    title: "Допрос окончен",
+    body: "Вы не подтвердили налоговое резидентство Казахстана.\nЗначит, сегодня вопросов к вам нет.\n\nХотите разобраться в инвестициях и налогах без допроса?",
+    link: "Подпишитесь на наш Telegram-канал\n«Сбережения и инвестиции»",
+    href: LINKS.telegram,
+    scan: "Сканируйте QR.",
+    qr: "qr_telegram",
+  },
+  CLEAR: {
+    title: "Можете идти",
+    body: "По вашим ответам оснований для подачи декларации сейчас нет.\n\nРедкий случай: инспектору больше нечего спрашивать.",
+    link: "Telegram «Сбережения и инвестиции»",
+    href: LINKS.telegram,
+    scan: "Сканируйте QR — там про налоги, инвестиции и много всего полезного.",
+    qr: "qr_telegram",
+  },
+  WATCH: {
+    title: "А вот тут придётся отчитаться",
+    body: "По вашим ответам вам нужно подать ФНО 270.\n\nЕсли уже мысленно открыли Excel и стало тревожно — можно не начинать с Excel.",
+    link: "Свяжитесь с AI-Zhan — нашим ИИ-агентом, она подскажет что делать.",
+    href: LINKS.aizhan,
+    scan: "Сканируйте QR — разберём вашу ситуацию.",
+    qr: "qr_aizhan",
+  },
+  ALERT: {
+    title: "У вас полный комплект",
+    body: "По вашим ответам нужны ФНО 250 и ФНО 270.\n\nТут лучше сначала разобраться, что и куда подавать, а уже потом открывать формы.",
+    link: "Свяжитесь с AI-Zhan — нашим ИИ-агентом, она подскажет что делать.",
+    href: LINKS.aizhan,
+    scan: "Сканируйте QR — разберём вашу ситуацию.",
+    qr: "qr_aizhan",
+  },
+};
+
 export const MICRO = {
   resident_check: "Хм. Тогда уточним статус до конца.",
   mandatory: "Так. Это меняет дело.",

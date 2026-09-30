@@ -1,6 +1,8 @@
 import Phaser from "phaser";
 import { W, H } from "../game/config";
 import { FONT_DISPLAY, T } from "../game/theme";
+import { flow } from "../logic/flow";
+import { VERDICTS, type Finale, type VerdictCode } from "../logic/tree";
 
 /** Generate soft procedural textures once; load cinematic stills. */
 export class BootScene extends Phaser.Scene {
@@ -28,6 +30,7 @@ export class BootScene extends Phaser.Scene {
     this.load.image("bg_office_clear", "art/office-clear.png");
     this.load.image("bg_title", "art/title-portrait.png");
     this.load.image("bg_wake", "art/finale-sunny.png");
+    this.load.image("protocol_header", "art/protocol-screen.jpg");
     this.load.image("qr_aizhan", "art/qr-aizhan.jpg");
     this.load.image("qr_telegram", "art/qr-telegram.png");
   }
@@ -48,10 +51,32 @@ export class BootScene extends Phaser.Scene {
     const go = (): void => {
       if (this.booted) return;
       this.booted = true;
+      const preview = previewVerdict();
+      if (preview) {
+        flow.previewVerdict(preview);
+        this.scene.start("Wake");
+        return;
+      }
       this.scene.start("Title");
     };
 
     void document.fonts.ready.then(go);
     this.time.delayedCall(700, go);
   }
+}
+
+const FINALE_SAMPLE: Record<Finale, VerdictCode> = {
+  OUT: "r_not_resident",
+  CLEAR: "r_none",
+  WATCH: "r_only270",
+  ALERT: "r_both",
+};
+
+/** ?wake=OUT|CLEAR|WATCH|ALERT opens that protocol card. */
+function previewVerdict(): VerdictCode | null {
+  const raw = new URLSearchParams(window.location.search).get("wake");
+  if (!raw) return null;
+  if (raw in FINALE_SAMPLE) return FINALE_SAMPLE[raw as Finale];
+  if (raw in VERDICTS) return raw as VerdictCode;
+  return null;
 }

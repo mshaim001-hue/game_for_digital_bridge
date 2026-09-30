@@ -361,6 +361,15 @@ export class InterrogationFlow {
     const r = this.answers.result;
     return typeof r === "string" ? (r as VerdictCode) : undefined;
   }
+
+  /** Jump straight to a protocol card. Used by ?wake= for the four finales. */
+  previewVerdict(code: VerdictCode): void {
+    this.reset();
+    this.answers.result = code;
+    this.phase = "WAKE";
+    this.step = "wake";
+    this.sessionId = "preview";
+  }
 }
 
 export const flow = new InterrogationFlow();
