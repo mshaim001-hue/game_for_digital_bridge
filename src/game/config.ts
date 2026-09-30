@@ -5,6 +5,7 @@ import { InterrogationScene } from "../scenes/InterrogationScene";
 import { VerdictScene } from "../scenes/VerdictScene";
 import { WakeCutScene } from "../scenes/WakeCutScene";
 import { WakeScene } from "../scenes/WakeScene";
+import { ProtocolScene } from "../scenes/ProtocolScene";
 import { AbortScene } from "../scenes/AbortScene";
 
 /** Vertical tablet · cartoon-movie still (matches 720×1280 art). */
@@ -43,6 +44,7 @@ export function createGame(parent: string): Phaser.Game {
       VerdictScene,
       WakeCutScene,
       WakeScene,
+      ProtocolScene,
       AbortScene,
     ],
     audio: {

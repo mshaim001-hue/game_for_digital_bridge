@@ -54,7 +54,7 @@ export class BootScene extends Phaser.Scene {
       const preview = previewVerdict();
       if (preview) {
         flow.previewVerdict(preview);
-        this.scene.start("Wake");
+        this.scene.start("Protocol");
         return;
       }
       this.scene.start("Title");
