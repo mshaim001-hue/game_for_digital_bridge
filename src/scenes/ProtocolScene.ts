@@ -133,18 +133,6 @@ export class ProtocolScene extends Phaser.Scene {
       const baseScale = Math.max(W / img.width, H / img.height);
       stage.add(img);
 
-      // Compact wheel printed on the mug face — keep spokes inside the ceramic.
-      const mugX = 72 - img.width / 2;
-      const mugY = 428 - img.height / 2;
-      if (this.textures.exists("mug_wheel")) {
-        const wheel = this.add
-          .image(mugX, mugY, "mug_wheel")
-          .setDisplaySize(22, 22)
-          .setAlpha(0.68)
-          .setBlendMode(Phaser.BlendModes.MULTIPLY);
-        stage.add(wheel);
-      }
-
       stage.setScale(baseScale * 1.04);
       this.tweens.add({
         targets: stage,
