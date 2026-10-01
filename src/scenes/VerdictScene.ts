@@ -46,7 +46,7 @@ export class VerdictScene extends Phaser.Scene {
       W - 80,
       () => {
         flow.beginWake();
-        this.scene.start("Wake");
+        this.scene.start("Protocol");
       },
       { height: 88, size: "34px", tone: "yes" }
     );

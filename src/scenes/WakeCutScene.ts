@@ -55,7 +55,7 @@ export class WakeCutScene extends Phaser.Scene {
     this.time.delayedCall(1100, () => {
       flow.beginWake();
       track({ name: "wake", sessionId: flow.sessionId });
-      this.scene.start("Wake");
+      this.scene.start("Protocol");
     });
   }
 }

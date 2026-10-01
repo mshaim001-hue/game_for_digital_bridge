@@ -109,11 +109,16 @@ export class PaperSheet extends Phaser.GameObjects.Container {
   readonly paperW: number;
   readonly paperH: number;
 
-  constructor(scene: Phaser.Scene, centerY: number, height: number) {
+  constructor(
+    scene: Phaser.Scene,
+    centerY: number,
+    height: number,
+    width = W - 80
+  ) {
     super(scene, W / 2, centerY);
-    this.paperW = W - 80;
+    this.paperW = width;
     this.paperH = height;
-    const r = 44;
+    const r = Math.min(36, Math.round(height * 0.08));
     const g = scene.add.graphics();
     g.fillStyle(0x000000, 0.22);
     g.fillRoundedRect(
